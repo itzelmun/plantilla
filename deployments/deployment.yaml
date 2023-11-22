@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-aplicacion
+  namespace: my-namespace
+spec:
+  selector:
+   matchLabels:
+    app: my-aplicacion
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-aplicacion
+        role: my-aplicacion
+    spec:
+      containers:
+        - name: my-aplicacion
+          image: sistemasudec/nombre-de-tu-proyecto:tag
+          env:
+            - name: MYSQL_HOST
+              value: mysql-service #aqui va el mismo nombre del service de statefulset
+            - name: MYSQL_DATABASE
+              value: nombre-de-db
+            - name: MYSQL_USER
+              value: nombre-usuario
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: password #aqui va la variable de entorno de tu contraseña secret
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: my-aplicacion
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-aplicacion-service
+  namespace: my-aplicacion
+  labels:
+    app: my-aplicacion
+spec:
+  selector:
+   app: my-aplicacion
+  type: ExternalName
+  externalName: nginx-internal.service-ns.svc.cluster.local
+  type: ClusterIP
+  ports:
+   - name: http
+     port: 80
+     protocol: TCP
+     targetPort: 80
+  selector:
+    role: my-aplicacion

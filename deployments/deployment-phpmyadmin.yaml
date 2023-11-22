@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proyecto-phpmyadmin
+  namespace: my-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proyecto-admin
+  template:
+    metadata:
+      labels:
+        app: proyecto-admin
+    spec:
+      containers:
+        - name: proyecto-admin
+          image: sistemasudec/phpmyadmin:nombre-de-tu-proyecto #solo se cambia el tag por el nombre de tu proyecto
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: PMA_HOST
+              value: mysql-svc #aqui va el nombre de tu service de statefulset
+            - name: PMA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: password
+            - name: MAX_EXECUTION_TIME
+              value: "5000"
+            - name: MEMORY_LIMIT
+              value: "80000K"
+            - name: UPLOAD_LIMIT
+              value: "80000K"
+          volumeMounts:
+            - name: sessions
+              mountPath: /sessions
+      volumes:
+        - name: sessions
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proyecto-admin-service
+  namespace: my-namespace
+spec:
+  type: ClusterIP
+  selector:
+    app: proyecto-admin
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80

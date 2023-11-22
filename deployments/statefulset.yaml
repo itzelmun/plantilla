@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+  namespace: my-namespace
+type: kubernetes.io/base64
+data:
+  password: NFRjQ0Y=
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-proyecto-database
+  namespace: my-namespace
+spec:
+  serviceName: "mysql-service" #se deja por defecto
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proyecto-mysql
+  template:
+    metadata:
+      labels:
+        app: proyecto-mysql
+    spec:
+      containers:
+        - name: proyecto-mysql
+          image: mysql:5.5.62
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: rootpassword #es para entrar como root 
+          ports:
+            - containerPort: 3306
+              name: proyecto-mysql-pvc #nombre de tu pvc
+          volumeMounts:
+            - name: proyecto-mysql-pvc #nombre de tu pvc
+              mountPath: /var/lib/mysql
+            - name: sql-scripts
+              mountPath: /docker-entrypoint-initdb.d
+      volumes: 
+        - name: proyecto-mysql-pvc #nombre de tu pvc
+          persistentVolumeClaim:
+            claimName: proyecto-mysql-pvc #nombre de tu pvc
+        - name: sql-scripts
+          configMap:
+            name: import-sql-scripts
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  namespace: my-namespace
+spec:
+  selector:
+    app: proyecto-mysql
+  type: ClusterIP
+  ports:
+    - name: proyecto-mysql
+      port: 3306
+      targetPort: 3306

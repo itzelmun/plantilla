@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: import-sql-scripts
+  namespace: my-namespace
+data:
+  proyecto.sql: |
+    CREATE DATABASE IF NOT EXISTS proyecto;
+    USE proyecto;
+    CREATE USER 'user'@'localhost' IDENTIFIED BY 'psswrd-proyecto-user!';
+    GRANT ALL PRIVILEGES ON proyecto.* TO 'user'@'localhost';
+    FLUSH PRIVILEGES;
